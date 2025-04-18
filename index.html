@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jadwal Latihan Lisa</title>
+  <link rel="stylesheet" href="styles.css">
+  
+</head>
+<body>
+  <div class="container">
+    <h1>Jadwal Latihan Lisa</h1>
+    <p><strong>Nama:</strong> Lisa</p>
+    <p><strong>Umur:</strong> 47 tahun</p>
+
+    <!-- Kontainer untuk jadwal latihan harian -->
+    <div id="jadwalContainer"></div>
+
+    <!-- Bagian kalkulator BMI -->
+    <div class="tracker">
+      <h2>Kalkulator BMI</h2>
+      <label>Berat Badan (kg): <input type="number" id="weight"></label>
+      <label>Tinggi Badan (cm): <input type="number" id="height"></label>
+      <button onclick="hitungBMI(); catatProgress();">Hitung BMI & Catat Progress</button>
+      <div class="result" id="bmiResult"></div>
+    </div>
+
+    <!-- Tombol reset progress -->
+    <button class="reset" onclick="resetProgress();">Reset Progress</button>
+    </div>
+    
+    <!-- Grafik progress berat badan -->
+    <div class="progress-chart">
+      <h2>Progress Berat Badan Harian</h2>
+      <canvas id="progressChart"></canvas>
+      <button onclick="downloadChartImage();" style="margin-top: 10px; padding: 5px 10px; border-radius: 5px;">Unduh Grafik</button>
+    </div>
+  </div>
+
+  <!-- Chart.js digunakan untuk membuat grafik -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Data gambar latihan
+    const gambarLatihan = {
+      "Goblet Squat": "https://sportscienceinsider.com/wp-content/uploads/2022/10/Goblet-Squat-1024x1024.jpg",
+      "Chest Press": "https://www.panattasport.com/wp-content/uploads/2023/03/esercizio-1-108-jpg-webp.webp",
+      "Plank": "https://cdn-image.hipwee.com/wp-content/uploads/2019/08/hipwee-plank-vs-push-up-min.jpg",
+      "Kardio (Jalan Cepat)": "https://statik.tempo.co/data/2020/06/13/id_945174/945174_720.jpg",
+      "Deadlift (dumbbell)": "https://sportscienceinsider.com/wp-content/uploads/2023/05/How-To-DB-Deadlift.png",
+      "Dumbbell Row": "https://weighttraining.guide/wp-content/uploads/2017/01/bent-over-two-arm-dumbbell-row-resized.png",
+      "Cardio: Jalan cepat": "https://statik.tempo.co/data/2020/06/13/id_945174/945174_720.jpg",
+      "Step-up": "https://cdn-0.weighttraining.guide/wp-content/uploads/2016/11/dumbbell-step-up-resized.png?ezimgfmt=ng%3Awebp%2Fngcb4",
+      "Triceps Kickback": "https://training.fit/wp-content/uploads/2020/03/kickbacks.png",
+      "Mountain Climber": "https://i.pinimg.com/736x/26/b8/92/26b8925db823dfcf4f323a666e825f56.jpg",
+      "Lunges (Alternating)": "https://cdn.shopify.com/s/files/1/0393/3546/0995/files/Lunge-Blog.jpg",
+      "Incline Push Up": "https://weighttraining.guide/wp-content/uploads/2021/03/Incline-push-up-on-box.png",
+      "Cardio: Sepeda statis": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRa-YiUDDUVWQ2gatwpLJCnJ1Zhl4YGfvvItQ&s",
+      "Wall Sit": "https://www.shape.com/thmb/ujDPZFY4zjfo-FUa1fJ-J8BT6bg=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/Wall-Sit-shutterstock_724300495-f9556a7acba2437684962d2ad7d8cc0d.jpg",
+      "Dumbbell Curl": "https://weighttraining.guide/wp-content/uploads/2016/05/Dumbbell-Alternate-Biceps-Curl-resized.png",
+      "Jumping Jack": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBtSt8syNe7eT-3pebxnDQkjIwpKeNmJ4BEw&s",
+      "Kardio (Elliptical/Jalan cepat)": "https://statik.tempo.co/data/2020/06/13/id_945174/945174_720.jpg"
+    };
+    // Data jadwal latihan per hari
+    const jadwal = {
+      "Senin": [
+        { nama: "Goblet Squat", set: 3, rep: 12, rest: "30-60 detik", deskripsi: "Latihan ini menargetkan otot paha depan, bokong, dan inti tubuh. Pegang dumbbell di depan dada dan jaga punggung tetap tegak saat turun." },
+        { nama: "Chest Press", set: 3, rep: 10, rest: "30-60 detik", deskripsi: "Latihan dada utama untuk memperkuat otot pektoralis dan trisep. Berbaring di bangku, pegang dumbbell sejajar dada, lalu dorong ke atas hingga lengan lurus." },
+        { nama: "Plank", set: 3, rep: "30 detik tahan", rest: "30-60 detik", deskripsi: "Memperkuat inti tubuh dan punggung. Tahan posisi plank dengan postur lurus dan stabil." },
+        { nama: "Kardio (Jalan Cepat)", set: 1, rep: "20 menit", rest: "", deskripsi: "Jalan cepat setelah latihan beban membantu pembakaran lemak dan meningkatkan kebugaran jantung." }
+      ],
+      "Selasa": [
+        { nama: "Deadlift (dumbbell)", set: 3, rep: 12, rest: "60 detik", deskripsi: "Latihan untuk punggung, glute, dan paha belakang. Jaga punggung tetap netral saat menurunkan dan mengangkat beban." },
+        { nama: "Dumbbell Row", set: 3, rep: 12, rest: "45-60 detik", deskripsi: "Latihan ini fokus ke punggung atas dan bisep. Tarik dumbbell ke arah rusuk sambil jaga badan tetap condong ke depan." },
+        { nama: "Cardio: Jalan cepat", set: 1, rep: "20 menit", rest: "", deskripsi: "Lakukan jalan cepat di treadmill atau luar ruangan untuk memperkuat kinerja jantung." }
+      ],
+      "Rabu": [
+        { nama: "Step-up", set: 3, rep: 12, rest: "30 detik", deskripsi: "Naik turun bangku tinggi dengan dumbbell untuk melatih glute, paha, dan stabilitas." },
+        { nama: "Triceps Kickback", set: 3, rep: 12, rest: "45 detik", deskripsi: "Latihan ini memperkuat otot trisep. Fokus pada kontrol saat mengayun dumbbell ke belakang." },
+        { nama: "Mountain Climber", set: 3, rep: "30 detik", rest: "30 detik", deskripsi: "Cardio intensitas tinggi untuk meningkatkan detak jantung dan membakar kalori." }
+      ],
+      "Kamis": [
+        { nama: "Lunges (Alternating)", set: 3, rep: 12, rest: "30-45 detik", deskripsi: "Latihan ini menargetkan paha depan, bokong, dan keseimbangan tubuh." },
+        { nama: "Incline Push Up", set: 3, rep: 10, rest: "45 detik", deskripsi: "Latihan dada dan trisep dengan kemiringan, cocok untuk pemula." },
+        { nama: "Cardio: Sepeda statis", set: 1, rep: "20 menit", rest: "", deskripsi: "Lakukan dengan intensitas sedang untuk melatih jantung dan membakar kalori." }
+      ],
+      "Jumat": [
+        { nama: "Wall Sit", set: 3, rep: "30 detik", rest: "30 detik", deskripsi: "Melatih paha depan dan daya tahan otot kaki." },
+        { nama: "Dumbbell Curl", set: 3, rep: 12, rest: "30 detik", deskripsi: "Melatih otot bisep dengan kontrol dan fokus pada kontraksi." },
+        { nama: "Jumping Jack", set: 3, rep: "1 menit", rest: "30 detik", deskripsi: "Pemanasan kardio yang menyenangkan untuk membakar lemak dan meningkatkan mobilitas." },
+        { nama: "Kardio (Elliptical/Jalan cepat)", set: 1, rep: "20-25 menit", rest: "", deskripsi: "Kardio akhir minggu untuk meningkatkan stamina dan pembakaran lemak. Boleh diselingi lari pelan 30 detik." }
+      ]
+    };
+
+    const container = document.getElementById('jadwalContainer');
+
+    // Looping untuk menampilkan setiap hari dan daftar latihannya
+    Object.entries(jadwal).forEach(([hari, latihanList]) => {
+      const section = document.createElement('div');
+      section.classList.add('jadwal');
+      const title = document.createElement('h2');
+      title.textContent = hari;
+      section.appendChild(title);
+
+      latihanList.forEach((latihan, index) => {
+        const latihanEl = document.createElement('div');
+        latihanEl.classList.add('latihan');
+        latihanEl.innerHTML = `${latihan.nama} – ${latihan.set} set x ${latihan.rep} rep (Rest: ${latihan.rest})`;
+        latihanEl.onclick = () => {
+          const detail = document.getElementById(`${hari}_${index}`);
+          detail.style.display = detail.style.display === 'block' ? 'none' : 'block';
+        };
+
+        const detailEl = document.createElement('div');
+        detailEl.classList.add('detail');
+        detailEl.id = `${hari}_${index}`;
+        detailEl.innerHTML = `
+          <strong>Gambar Gerakan:</strong>
+          <img src="${gambarLatihan[latihan.nama] || ''}" alt="Gambar ${latihan.nama}" style="max-width: 100%; height: auto;" />
+          <p><strong>Cara gerakan yang benar:</strong> ${latihan.deskripsi}</p>
+        `;
+
+        section.appendChild(latihanEl);
+        section.appendChild(detailEl);
+      });
+
+      container.appendChild(section);
+    });
+
+    // Inisialisasi data dan grafik berat badan
+    // Ambil data dari localStorage jika tersedia
+    const storedWeights = localStorage.getItem('weightData');
+    const storedDates = localStorage.getItem('dateLabels');
+
+    const weightData = storedWeights ? JSON.parse(storedWeights) : [];
+    const dateLabels = storedDates ? JSON.parse(storedDates) : [];
+
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    const progressChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dateLabels,
+        datasets: [{
+          label: 'Berat Badan (kg)',
+          data: weightData,
+          borderColor: '#2980b9',
+          backgroundColor: 'rgba(41, 128, 185, 0.2)',
+          borderWidth: 2,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: false // Tidak mulai dari 0 agar lebih realistis
+          }
+        }
+      }
+    });
+
+    // Fungsi untuk menghitung BMI berdasarkan input berat dan tinggi
+    function hitungBMI() {
+      const berat = parseFloat(document.getElementById('weight').value);
+      const tinggi = parseFloat(document.getElementById('height').value) / 100;
+      const bmi = berat / (tinggi * tinggi);
+      document.getElementById('bmiResult').innerText = `BMI Anda: ${bmi.toFixed(2)} (${interpretasiBMI(bmi)})`;
+    }
+
+     // Fungsi untuk memberikan interpretasi hasil BMI
+    function interpretasiBMI(bmi) {
+      if (bmi < 18.5) return 'Kurus';
+      if (bmi < 25) return 'Normal';
+      if (bmi < 30) return 'Gemuk';
+      return 'Obesitas';
+    }
+
+     // Fungsi mencatat berat badan ke grafik
+     function catatProgress() {
+        const berat = parseFloat(document.getElementById('weight').value);
+        const today = new Date().toLocaleDateString('id-ID');
+
+        if (!isNaN(berat)) {
+            weightData.push(berat);
+            dateLabels.push(today);
+            localStorage.setItem('weightData', JSON.stringify(weightData)); // simpan ke localStorage
+            localStorage.setItem('dateLabels', JSON.stringify(dateLabels)); // simpan label tanggal
+            progressChart.update(); // update grafik
+        }
+    }
+
+    // Fungsi untuk mereset data berat badan
+    function resetProgress() {
+      localStorage.removeItem('weightData');
+      localStorage.removeItem('dateLabels');
+      weightData.length = 0;
+      dateLabels.length = 0;
+      progressChart.update();
+    }
+
+    function downloadChartImage() {
+        const link = document.createElement('a');
+        link.href = progressChart.toBase64Image();
+        link.download = 'progress_berat_badan.png';
+        link.click();
+    }
+  </script>
+</body>
+</html>
